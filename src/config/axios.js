@@ -1,12 +1,26 @@
 import axios from 'axios';
 
-
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+    baseURL: import.meta.env.VITE_API_URL || 'https://devsynchub-backend.onrender.com',
+    withCredentials: true,
     headers: {
-        "Authorization": `Bearer ${localStorage.getItem('token')}`
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
     }
-})
+});
 
+// Request interceptor to add auth token
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
 
 export default axiosInstance;   

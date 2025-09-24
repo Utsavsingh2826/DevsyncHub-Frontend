@@ -7,12 +7,12 @@ let socketInstance = null;
 export const initializeSocket = (projectId) => {
     const token = localStorage.getItem('token');
     console.log('Initializing socket with:', {
-        url: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+        url: import.meta.env.VITE_API_URL || 'https://devsynchub-backend.onrender.com',
         projectId,
         hasToken: !!token
     });
 
-    socketInstance = socket(import.meta.env.VITE_API_URL || 'http://localhost:3000', {
+    socketInstance = socket(import.meta.env.VITE_API_URL || 'https://devsynchub-backend.onrender.com', {
         auth: {
             token: token
         },
