@@ -1,4 +1,20 @@
 {
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
@@ -18,14 +34,8 @@
         {
           "key": "Cross-Origin-Isolation",
           "value": "true"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "cross-origin-isolated=()"
         }
       ]
     }
-  ],
-  "buildCommand": "npm run build:simple",
-  "outputDirectory": "dist"
+  ]
 }
