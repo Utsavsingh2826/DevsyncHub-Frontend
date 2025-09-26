@@ -5,7 +5,7 @@ import axios from '../config/axios'
 import { initializeSocket, receiveMessage, sendMessage } from '../config/socket'
 import Markdown from 'markdown-to-jsx'
 import hljs from 'highlight.js';
-import { getWebContainer } from '../config/webContainer.js'
+import { getWebContainer, getWebContainerError, isWebContainerAvailable } from '../config/webContainer.js'
 
 
 function SyntaxHighlightedCode(props) {
@@ -47,6 +47,9 @@ const Project = () => {
     const [ iframeUrl, setIframeUrl ] = useState(null)
 
     const [ runProcess, setRunProcess ] = useState(null)
+    const [ isWebContainerLoading, setIsWebContainerLoading ] = useState(false)
+    const [ isRunning, setIsRunning ] = useState(false)
+    const [ webContainerError, setWebContainerError ] = useState(null)
 
     const handleUserClick = (id) => {
         setSelectedUserId(prevSelectedUserId => {
@@ -127,13 +130,21 @@ const Project = () => {
 
         initializeSocket(project._id)
 
-        if (!webContainer) {
+        if (!webContainer && !webContainerError) {
             console.log("Initializing web container...");
+            setIsWebContainerLoading(true);
+            setWebContainerError(null);
+            
             getWebContainer().then(container => {
                 setWebContainer(container)
+                setIsWebContainerLoading(false);
+                setWebContainerError(null);
                 console.log("✅ Web container initialized successfully");
             }).catch(error => {
                 console.error("❌ Failed to initialize web container:", error);
+                setIsWebContainerLoading(false);
+                setWebContainerError(error.message);
+                console.log("WebContainer error set:", error.message);
             })
         }
 
@@ -299,7 +310,20 @@ const Project = () => {
                     <div className="file-tree w-full">
                         {Object.keys(fileTree).length === 0 ? (
                             <div className="p-4 text-gray-500 text-sm">
-                                No files yet. Ask AI to create a project!
+                                {webContainerError ? (
+                                    <div className="text-red-600">
+                                        <div className="font-semibold mb-2">⚠️ WebContainer Error</div>
+                                        <div className="text-xs mb-2">{webContainerError}</div>
+                                        <div className="text-xs">
+                                            <strong>Solutions:</strong><br/>
+                                            • Use localhost for development<br/>
+                                            • Ensure HTTPS with proper CORS headers<br/>
+                                            • Try the retry button above
+                                        </div>
+                                    </div>
+                                ) : (
+                                    "No files yet. Ask AI to create a project!"
+                                )}
                             </div>
                         ) : (
                             Object.keys(fileTree).map((file, index) => (
@@ -355,6 +379,39 @@ const Project = () => {
                         </div>
 
                         <div className="actions flex gap-2">
+                            {isWebContainerLoading && (
+                                <div className='p-2 px-4 bg-blue-500 text-white rounded flex items-center gap-2'>
+                                    <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
+                                    Initializing WebContainer...
+                                </div>
+                            )}
+                            {webContainerError && !isWebContainerLoading && (
+                                <div className='p-2 px-4 bg-red-500 text-white rounded flex items-center gap-2'>
+                                    <i className="ri-error-warning-line"></i>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-semibold">WebContainer Error</span>
+                                        <span className="text-xs opacity-90">{webContainerError}</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            setWebContainerError(null);
+                                            setWebContainer(null);
+                                            setIsWebContainerLoading(true);
+                                            getWebContainer().then(container => {
+                                                setWebContainer(container);
+                                                setIsWebContainerLoading(false);
+                                                setWebContainerError(null);
+                                            }).catch(error => {
+                                                setIsWebContainerLoading(false);
+                                                setWebContainerError(error.message);
+                                            });
+                                        }}
+                                        className="ml-2 px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs"
+                                    >
+                                        Retry
+                                    </button>
+                                </div>
+                            )}
                             {runProcess && (
                                 <button
                                     onClick={() => {
@@ -363,6 +420,7 @@ const Project = () => {
                                             runProcess.kill();
                                             setRunProcess(null);
                                             setIframeUrl(null);
+                                            setIsRunning(false);
                                             console.log('Application stopped');
                                         }
                                     }}
@@ -376,7 +434,13 @@ const Project = () => {
                                     try {
                                         // Check if web container is available
                                         if (!webContainer) {
-                                            alert('Web container is not ready yet. Please wait a moment and try again.');
+                                            if (isWebContainerLoading) {
+                                                alert('Web container is still initializing. Please wait a moment and try again.');
+                                            } else if (webContainerError) {
+                                                alert(`WebContainer is not available due to an error: ${webContainerError}\n\nPlease try the retry button or check your browser settings.`);
+                                            } else {
+                                                alert('Web container is not ready yet. Please wait a moment and try again.');
+                                            }
                                             return;
                                         }
 
@@ -386,6 +450,8 @@ const Project = () => {
                                             return;
                                         }
 
+                                        // Set loading state
+                                        setIsRunning(true);
                                         console.log('Starting run process...');
                                         console.log('File tree to mount:', fileTree);
                                         console.log('File tree keys:', Object.keys(fileTree));
@@ -400,6 +466,15 @@ const Project = () => {
 
                                         // Mount the file tree
                                         console.log('Mounting file tree to web container...');
+                                        console.log('File tree structure for mounting:', fileTree);
+                                        
+                                        // Validate file tree structure before mounting
+                                        const hasNestedDirs = Object.keys(fileTree).some(file => file.includes('/'));
+                                        if (hasNestedDirs) {
+                                            console.warn('WARNING: Found nested directories in file tree:', Object.keys(fileTree).filter(file => file.includes('/')));
+                                            console.warn('This may cause WebContainer mounting issues');
+                                        }
+                                        
                                         await webContainer.mount(fileTree);
                                         console.log('File tree mounted successfully');
 
@@ -437,13 +512,18 @@ const Project = () => {
                                         console.log('Installing dependencies...');
                                         const installProcess = await webContainer.spawn("npm", ["install"]);
 
-                                        // Handle install output
-                                        installProcess.output.pipeTo(new WritableStream({
-                                            write(chunk) {
-                                                const text = new TextDecoder().decode(chunk);
-                                                console.log('Install:', text);
-                                            }
-                                        }));
+                                        // Handle install output with better error handling
+                                        try {
+                                            installProcess.output.pipeTo(new WritableStream({
+                                                write(chunk) {
+                                                    const text = new TextDecoder().decode(chunk);
+                                                    console.log('Install:', text);
+                                                }
+                                            }));
+                                        } catch (streamError) {
+                                            console.warn('Stream handling warning:', streamError);
+                                            // Continue execution even if stream handling fails
+                                        }
 
                                         // Wait for install to complete
                                         const installExitCode = await installProcess.exit;
@@ -451,6 +531,7 @@ const Project = () => {
 
                                         if (installExitCode !== 0) {
                                             alert('Failed to install dependencies. Check console for details.');
+                                            setIsRunning(false);
                                             return;
                                         }
 
@@ -458,15 +539,21 @@ const Project = () => {
                                         console.log('Starting application...');
                                         const startProcess = await webContainer.spawn("npm", ["start"]);
 
-                                        // Handle start output
-                                        startProcess.output.pipeTo(new WritableStream({
-                                            write(chunk) {
-                                                const text = new TextDecoder().decode(chunk);
-                                                console.log('Start:', text);
-                                            }
-                                        }));
+                                        // Handle start output with better error handling
+                                        try {
+                                            startProcess.output.pipeTo(new WritableStream({
+                                                write(chunk) {
+                                                    const text = new TextDecoder().decode(chunk);
+                                                    console.log('Start:', text);
+                                                }
+                                            }));
+                                        } catch (streamError) {
+                                            console.warn('Start stream handling warning:', streamError);
+                                            // Continue execution even if stream handling fails
+                                        }
 
                                         setRunProcess(startProcess);
+                                        setIsRunning(false);
 
                                         // Listen for server ready event
                                         webContainer.on('server-ready', (port, url) => {
@@ -478,19 +565,37 @@ const Project = () => {
                                         startProcess.exit.then((code) => {
                                             console.log('Application process exited with code:', code);
                                             setRunProcess(null);
+                                            setIsRunning(false);
                                         });
 
                                         console.log('✅ Run process initiated successfully');
 
                                     } catch (error) {
                                         console.error('❌ Error running application:', error);
-                                        alert('Error running application: ' + error.message + '\n\nCheck console for more details.');
+                                        
+                                        // Reset loading states
+                                        setIsRunning(false);
+                                        
+                                        // Provide more specific error messages
+                                        let errorMessage = 'Error running application: ' + error.message;
+                                        
+                                        if (error.message.includes('EIO: invalid file name')) {
+                                            errorMessage += '\n\nThis error is usually caused by nested directory structures in the file tree. The AI service has been updated to avoid this issue.';
+                                        } else if (error.message.includes('mount')) {
+                                            errorMessage += '\n\nWebContainer mounting failed. This might be due to file structure issues.';
+                                        } else if (error.message.includes('spawn')) {
+                                            errorMessage += '\n\nFailed to start the application process. Check if all dependencies are properly installed.';
+                                        } else if (error.message.includes('ReadableStream')) {
+                                            errorMessage += '\n\nStream handling error. This is usually temporary and the application should still work.';
+                                        }
+                                        
+                                        alert(errorMessage + '\n\nCheck console for more details.');
                                     }
                                 }}
                                 className='p-2 px-4 bg-green-500 text-white hover:bg-green-600 rounded'
-                                disabled={!webContainer || Object.keys(fileTree).length === 0}
+                                disabled={!webContainer || Object.keys(fileTree).length === 0 || isRunning || isWebContainerLoading || webContainerError}
                             >
-                                {runProcess ? 'Running...' : 'Run'}
+                                {isWebContainerLoading ? 'Initializing...' : webContainerError ? 'WebContainer Error' : isRunning ? 'Starting...' : runProcess ? 'Running...' : 'Run'}
                             </button>
 
 
