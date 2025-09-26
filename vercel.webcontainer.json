@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "name": "devsync-hub",
+  "name": "devsync-hub-webcontainer",
   "builds": [
     {
       "src": "package.json",
@@ -29,7 +29,7 @@
           "value": "require-corp"
         },
         {
-          "key": "Cross-Origin-Opener-Policy", 
+          "key": "Cross-Origin-Opener-Policy",
           "value": "same-origin"
         },
         {
@@ -66,12 +66,27 @@
           "value": "same-origin"
         },
         {
-          "key": "Cross-Origin-Resource-Policy", 
+          "key": "Cross-Origin-Resource-Policy",
           "value": "cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "require-corp"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
         }
       ]
     }
   ],
+  "buildCommand": "npm run build:simple",
+  "outputDirectory": "dist",
   "env": {
     "NODE_ENV": "production"
   }

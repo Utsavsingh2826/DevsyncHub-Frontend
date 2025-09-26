@@ -20,15 +20,29 @@ export const getWebContainer = async () => {
                 
                 // Try to provide more specific guidance
                 const currentUrl = window.location.href;
-                if (currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1')) {
+                const isVercel = currentUrl.includes('vercel.app');
+                const isNetlify = currentUrl.includes('netlify.app');
+                const isLocalhost = currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1');
+                
+                if (isLocalhost) {
                     console.warn('🔧 You are on localhost but still getting this error. Try:');
                     console.warn('1. Use http://localhost:5173 (not 127.0.0.1)');
                     console.warn('2. Run: npm run dev:webcontainer');
                     console.warn('3. Or use: npm run serve:webcontainer');
+                } else if (isVercel) {
+                    console.warn('🌐 Vercel deployment detected. WebContainer requires:');
+                    console.warn('1. Check vercel.json has proper CORS headers');
+                    console.warn('2. Redeploy with updated configuration');
+                    console.warn('3. Verify headers in Network tab');
+                } else if (isNetlify) {
+                    console.warn('🌐 Netlify deployment detected. WebContainer requires:');
+                    console.warn('1. Check _headers file has proper CORS headers');
+                    console.warn('2. Redeploy with updated configuration');
+                    console.warn('3. Verify headers in Network tab');
                 } else {
-                    console.warn('🌐 You are not on localhost. WebContainer requires:');
-                    console.warn('1. Use localhost for development');
-                    console.warn('2. Or configure CORS headers for your server');
+                    console.warn('🌐 Production deployment detected. WebContainer requires:');
+                    console.warn('1. Configure CORS headers for your hosting platform');
+                    console.warn('2. Use localhost for development');
                 }
             }
             
