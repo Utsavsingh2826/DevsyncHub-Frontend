@@ -1,46 +1,22 @@
-import React, { useContext, useState, useEffect } from 'react'
+import React, { useContext, useState, useEffect, lazy, Suspense } from 'react'
 import { UserContext } from '../context/user.context'
 import axios from "../config/axios"
 import { useNavigate } from 'react-router-dom'
+
+// Lazy load heavy components
+const ProjectCard = lazy(() => import('../components/ProjectCard'))
+const CreateProjectModal = lazy(() => import('../components/CreateProjectModal'))
 
 const Home = () => {
 
     const { user } = useContext(UserContext)
     const [ isModalOpen, setIsModalOpen ] = useState(false)
-    const [ projectName, setProjectName ] = useState('')
-    const [ projectDescription, setProjectDescription ] = useState('')
     const [ projects, setProjects ] = useState([])
     const [ isLoading, setIsLoading ] = useState(true)
     const [ searchTerm, setSearchTerm ] = useState('')
     const [ sortBy, setSortBy ] = useState('recent')
 
     const navigate = useNavigate()
-
-    function createProject(e) {
-        e.preventDefault()
-        console.log({ projectName, projectDescription })
-
-        axios.post('/projects/create', {
-            name: projectName,
-            description: projectDescription,
-        },{
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
-        })
-        .then((res) => {
-            console.log(res)
-            setIsModalOpen(false)
-            setProjectName('')
-            setProjectDescription('')
-            // Refresh projects list
-            fetchProjects()
-        })
-        .catch((error) => {
-            console.log(error)
-            alert('Failed to create project. Please try again.')
-        })
-    }
 
     const fetchProjects = () => {
         setIsLoading(true)
@@ -168,52 +144,16 @@ const Home = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {sortedProjects.map((project) => (
-                            <div
-                                key={project._id}
-                                onClick={() => {
-                                    navigate(`/project`, {
-                                        state: { project }
-                                    })
-                                }}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all duration-200 cursor-pointer group"
-                            >
-                                <div className="p-6">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="flex-1">
-                                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                                {project.name}
-                                            </h3>
-                                            {project.description && (
-                                                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                                                    {project.description}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className="ml-2">
-                                            <i className="ri-more-2-line text-gray-400 group-hover:text-gray-600"></i>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between text-sm text-gray-500">
-                                        <div className="flex items-center space-x-4">
-                                            <div className="flex items-center">
-                                                <i className="ri-user-line mr-1"></i>
-                                                <span>{project.users?.length || 0} collaborators</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <i className="ri-calendar-line mr-1"></i>
-                                                <span>{formatDate(project.createdAt)}</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center text-blue-600 group-hover:text-blue-700">
-                                            <span className="text-xs font-medium">Open</span>
-                                            <i className="ri-arrow-right-line ml-1"></i>
-                                        </div>
-                                    </div>
-                                </div>
+                        <Suspense fallback={
+                            <div className="col-span-full flex justify-center items-center py-12">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                                <span className="ml-2 text-gray-600">Loading project cards...</span>
                             </div>
-                        ))}
+                        }>
+                            {sortedProjects.map((project) => (
+                                <ProjectCard key={project._id} project={project} />
+                            ))}
+                        </Suspense>
 
                         {sortedProjects.length === 0 && !isLoading && (
                             <div className="col-span-full flex flex-col items-center justify-center py-12">
@@ -240,76 +180,20 @@ const Home = () => {
             </main>
 
             {/* Create Project Modal */}
-            {isModalOpen && (
+            <Suspense fallback={
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-semibold text-gray-900">Create New Project</h2>
-                                <button
-                                    onClick={() => {
-                                        setIsModalOpen(false)
-                                        setProjectName('')
-                                        setProjectDescription('')
-                                    }}
-                                    className="text-gray-400 hover:text-gray-600"
-                                >
-                                    <i className="ri-close-line text-xl"></i>
-                                </button>
-                            </div>
-                            
-                            <form onSubmit={createProject} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Project Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={projectName}
-                                        onChange={(e) => setProjectName(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Enter project name"
-                                        required
-                                    />
-                                </div>
-                                
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Description (Optional)
-                                    </label>
-                                    <textarea
-                                        value={projectDescription}
-                                        onChange={(e) => setProjectDescription(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Enter project description"
-                                        rows={3}
-                                    />
-                                </div>
-                                
-                                <div className="flex justify-end space-x-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsModalOpen(false)
-                                            setProjectName('')
-                                            setProjectDescription('')
-                                        }}
-                                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                    >
-                                        Create Project
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p className="text-center mt-2 text-gray-600">Loading modal...</p>
                     </div>
                 </div>
-            )}
+            }>
+                <CreateProjectModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    onProjectCreated={fetchProjects}
+                />
+            </Suspense>
         </div>
     )
 }

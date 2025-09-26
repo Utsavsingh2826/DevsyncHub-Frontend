@@ -26,12 +26,33 @@ export default defineConfig({
     }
   },
   build: {
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          webcontainer: ['@webcontainer/api']
+          // Core React libraries
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          
+          // UI and styling libraries
+          'ui-vendor': ['highlight.js', 'markdown-to-jsx', 'remixicon'],
+          
+          // WebContainer and related
+          'webcontainer': ['@webcontainer/api'],
+          
+          // HTTP and communication
+          'http-vendor': ['axios', 'socket.io-client'],
+          
+          // Large dependencies
+          'highlight-vendor': ['highlight.js/lib/core', 'highlight.js/lib/languages']
         }
+      }
+    },
+    // Optimize for production
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
       }
     }
   }

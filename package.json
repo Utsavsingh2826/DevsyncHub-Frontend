@@ -9,6 +9,7 @@
     "dev:server": "node dev-server.js",
     "build": "vite build",
     "build:webcontainer": "vite build",
+    "build:optimized": "node build-optimized.js",
     "preview": "vite preview",
     "preview:webcontainer": "vite preview --host localhost --port 4173",
     "serve:webcontainer": "node dev-server.js",
