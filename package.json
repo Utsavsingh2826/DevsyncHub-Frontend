@@ -16,12 +16,7 @@
     "serve:webcontainer": "node dev-server.js",
     "setup:webcontainer": "node setup-webcontainer.js",
     "fix:webcontainer": "node fix-webcontainer.js",
-    "deploy:vercel": "powershell -ExecutionPolicy Bypass -File deploy-vercel.ps1",
-    "deploy:vercel:fixed": "powershell -ExecutionPolicy Bypass -File deploy-vercel-fixed.ps1",
-    "deploy:vercel:simple": "vercel --prod",
-    "deploy:vercel:minimal": "vercel --prod --config vercel.minimal.json",
-    "deploy:vercel:standard": "vercel --prod --config vercel.simple.json",
-    "deploy:vercel:webcontainer": "vercel --prod --config vercel.webcontainer.json",
+    "deploy": "powershell -ExecutionPolicy Bypass -File deploy.ps1",
     "lint": "eslint ."
   },
   "dependencies": {
