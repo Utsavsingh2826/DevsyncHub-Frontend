@@ -5,10 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:webcontainer": "vite --host localhost --port 5173",
     "dev:server": "node dev-server.js",
     "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build:webcontainer": "vite build",
+    "preview": "vite preview",
+    "preview:webcontainer": "vite preview --host localhost --port 4173",
+    "serve:webcontainer": "node dev-server.js",
+    "setup:webcontainer": "node setup-webcontainer.js",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@webcontainer/api": "^1.5.1-internal.4",
