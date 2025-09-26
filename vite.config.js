@@ -4,14 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [ react() ],
-  resolve: {
-    alias: {
-      // Fix RemixIcon resolution
-      'remixicon': 'remixicon/fonts/remixicon.css'
-    }
-  },
   optimizeDeps: {
-    exclude: ['remixicon'],
     include: ['react', 'react-dom', 'react-router-dom']
   },
   server: {
