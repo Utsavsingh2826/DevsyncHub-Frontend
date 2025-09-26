@@ -2,3 +2,12 @@
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: cross-origin
+  Cross-Origin-Isolation: true
+  Permissions-Policy: cross-origin-isolated=()
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+
+/assets/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: cross-origin

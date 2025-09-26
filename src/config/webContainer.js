@@ -17,6 +17,19 @@ export const getWebContainer = async () => {
             if (!window.crossOriginIsolated) {
                 console.warn('⚠️ WebContainer may not work properly without crossOriginIsolated headers');
                 console.warn('For development, you may need to run with specific headers or use localhost');
+                
+                // Try to provide more specific guidance
+                const currentUrl = window.location.href;
+                if (currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1')) {
+                    console.warn('🔧 You are on localhost but still getting this error. Try:');
+                    console.warn('1. Use http://localhost:5173 (not 127.0.0.1)');
+                    console.warn('2. Run: npm run dev:webcontainer');
+                    console.warn('3. Or use: npm run serve:webcontainer');
+                } else {
+                    console.warn('🌐 You are not on localhost. WebContainer requires:');
+                    console.warn('1. Use localhost for development');
+                    console.warn('2. Or configure CORS headers for your server');
+                }
             }
             
             webContainerInstance = await WebContainer.boot();
@@ -28,7 +41,26 @@ export const getWebContainer = async () => {
             
             // Provide helpful error messages
             if (error.message.includes('SharedArrayBuffer')) {
-                throw new Error('WebContainer requires SharedArrayBuffer support. Please ensure your server has proper CORS headers (Cross-Origin-Embedder-Policy: require-corp, Cross-Origin-Opener-Policy: same-origin) or use localhost for development.');
+                const currentUrl = window.location.href;
+                let errorMessage = 'WebContainer requires SharedArrayBuffer support.\n\n';
+                
+                if (currentUrl.includes('localhost') || currentUrl.includes('127.0.0.1')) {
+                    errorMessage += 'You are on localhost but still getting this error.\n\n';
+                    errorMessage += 'SOLUTIONS:\n';
+                    errorMessage += '1. Use http://localhost:5173 (not 127.0.0.1)\n';
+                    errorMessage += '2. Run: npm run dev:webcontainer\n';
+                    errorMessage += '3. Or use: npm run serve:webcontainer\n';
+                    errorMessage += '4. Clear browser cache and try again';
+                } else {
+                    errorMessage += 'You are not on localhost.\n\n';
+                    errorMessage += 'SOLUTIONS:\n';
+                    errorMessage += '1. Use localhost for development\n';
+                    errorMessage += '2. Or configure CORS headers:\n';
+                    errorMessage += '   Cross-Origin-Embedder-Policy: require-corp\n';
+                    errorMessage += '   Cross-Origin-Opener-Policy: same-origin';
+                }
+                
+                throw new Error(errorMessage);
             } else if (error.message.includes('secure context')) {
                 throw new Error('WebContainer requires HTTPS or localhost. Please use a secure connection.');
             } else {

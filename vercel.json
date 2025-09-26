@@ -1,0 +1,36 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cross-Origin-Embedder-Policy",
+          "value": "require-corp"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "cross-origin"
+        },
+        {
+          "key": "Cross-Origin-Isolation",
+          "value": "true"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "cross-origin-isolated=()"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "app/api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "buildCommand": "npm run build:simple",
+  "outputDirectory": "dist"
+}

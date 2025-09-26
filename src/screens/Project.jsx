@@ -6,6 +6,7 @@ import { initializeSocket, receiveMessage, sendMessage } from '../config/socket'
 import Markdown from 'markdown-to-jsx'
 import hljs from 'highlight.js';
 import { getWebContainer, getWebContainerError, isWebContainerAvailable } from '../config/webContainer.js'
+import WebContainerFallback from '../components/WebContainerFallback'
 
 
 function SyntaxHighlightedCode(props) {
@@ -386,31 +387,22 @@ const Project = () => {
                                 </div>
                             )}
                             {webContainerError && !isWebContainerLoading && (
-                                <div className='p-2 px-4 bg-red-500 text-white rounded flex items-center gap-2'>
-                                    <i className="ri-error-warning-line"></i>
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-semibold">WebContainer Error</span>
-                                        <span className="text-xs opacity-90">{webContainerError}</span>
-                                    </div>
-                                    <button 
-                                        onClick={() => {
+                                <WebContainerFallback 
+                                    error={webContainerError}
+                                    onRetry={() => {
+                                        setWebContainerError(null);
+                                        setWebContainer(null);
+                                        setIsWebContainerLoading(true);
+                                        getWebContainer().then(container => {
+                                            setWebContainer(container);
+                                            setIsWebContainerLoading(false);
                                             setWebContainerError(null);
-                                            setWebContainer(null);
-                                            setIsWebContainerLoading(true);
-                                            getWebContainer().then(container => {
-                                                setWebContainer(container);
-                                                setIsWebContainerLoading(false);
-                                                setWebContainerError(null);
-                                            }).catch(error => {
-                                                setIsWebContainerLoading(false);
-                                                setWebContainerError(error.message);
-                                            });
-                                        }}
-                                        className="ml-2 px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs"
-                                    >
-                                        Retry
-                                    </button>
-                                </div>
+                                        }).catch(error => {
+                                            setIsWebContainerLoading(false);
+                                            setWebContainerError(error.message);
+                                        });
+                                    }}
+                                />
                             )}
                             {runProcess && (
                                 <button
