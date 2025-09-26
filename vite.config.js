@@ -4,6 +4,16 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [ react() ],
+  resolve: {
+    alias: {
+      // Fix RemixIcon resolution
+      'remixicon': 'remixicon/fonts/remixicon.css'
+    }
+  },
+  optimizeDeps: {
+    exclude: ['remixicon'],
+    include: ['react', 'react-dom', 'react-router-dom']
+  },
   server: {
     host: 'localhost',
     port: 5173,
@@ -28,22 +38,44 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      external: (id) => {
+        // Exclude RemixIcon from bundling as it's CSS-only
+        if (id.includes('remixicon')) {
+          return false
+        }
+        return false
+      },
       output: {
-        manualChunks: {
+        manualChunks: (id) => {
+          // Handle RemixIcon separately
+          if (id.includes('remixicon')) {
+            return 'remixicon'
+          }
+          
           // Core React libraries
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+            return 'react-vendor'
+          }
           
-          // UI and styling libraries
-          'ui-vendor': ['highlight.js', 'markdown-to-jsx', 'remixicon'],
+          // UI libraries
+          if (id.includes('highlight.js') || id.includes('markdown-to-jsx')) {
+            return 'ui-vendor'
+          }
           
-          // WebContainer and related
-          'webcontainer': ['@webcontainer/api'],
+          // WebContainer
+          if (id.includes('@webcontainer')) {
+            return 'webcontainer'
+          }
           
-          // HTTP and communication
-          'http-vendor': ['axios', 'socket.io-client'],
+          // HTTP libraries
+          if (id.includes('axios') || id.includes('socket.io')) {
+            return 'http-vendor'
+          }
           
-          // Large dependencies
-          'highlight-vendor': ['highlight.js/lib/core', 'highlight.js/lib/languages']
+          // Default to vendor chunk
+          if (id.includes('node_modules')) {
+            return 'vendor'
+          }
         }
       }
     },
