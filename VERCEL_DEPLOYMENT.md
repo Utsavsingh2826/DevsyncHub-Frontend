@@ -168,3 +168,4 @@ After following these steps, your WebContainer should work perfectly on Vercel!
 - [ ] Headers are present in Network tab
 - [ ] `window.crossOriginIsolated` is true
 - [ ] WebContainer initializes without errors
+

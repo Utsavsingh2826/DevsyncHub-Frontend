@@ -150,3 +150,4 @@ console.log('================================');
 console.log('If you followed the steps above, WebContainer should initialize');
 console.log('without SharedArrayBuffer errors. The key is using localhost');
 console.log('with the proper development server configuration.');
+

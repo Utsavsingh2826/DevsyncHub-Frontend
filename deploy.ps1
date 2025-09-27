@@ -25,7 +25,7 @@ if (Test-Path "dist") { Remove-Item -Recurse -Force "dist" }
 if (Test-Path ".vercel") { Remove-Item -Recurse -Force ".vercel" }
 
 Write-Host "📦 Building project..." -ForegroundColor Blue
-npm run build:simple
+npm run build
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Build failed!" -ForegroundColor Red

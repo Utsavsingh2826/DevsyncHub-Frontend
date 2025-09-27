@@ -193,3 +193,4 @@ npm run deploy:vercel:standard # Standard configuration
 ✅ **crossOriginIsolated: true** - Check in browser console
 
 The deployment should now work without the function runtime error!
+
